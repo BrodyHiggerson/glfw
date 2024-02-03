@@ -35,6 +35,7 @@
 #include <string.h>
 #include <windowsx.h>
 #include <shellapi.h>
+#include <stdio.h>
 
 // Returns the window style for the specified window
 //
@@ -1327,7 +1328,15 @@ static int createNativeWindow(_GLFWwindow* window,
         return GLFW_FALSE;
     }
 
-    SetPropW(window->win32.handle, L"GLFW", window);
+    // #RTG BEGIN
+    // - SetPropW sometimes fails with error code 8, suggesting a memory issue, but we have enough
+    // so just keep trying until we get through - usually succeeds on a retry
+    while (SetPropW(window->win32.handle, L"GLFW", window) == 0)
+    {
+        const DWORD err = GetLastError();
+        printf("GLFW: SetPropW failed due to code %lu, retrying...\n", err);
+    }
+    // #RTG END
 
     if (IsWindows7OrGreater())
     {
